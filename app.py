@@ -4,7 +4,6 @@ import numpy as np
 import pickle
 import json
 
-# Load model, scaler, columns
 model = pickle.load(open('churn_model.pkl', 'rb'))
 scaler = pickle.load(open('scaler.pkl', 'rb'))
 with open('feature_columns.json') as f:
@@ -16,7 +15,6 @@ st.markdown("Predict whether a customer is likely to churn based on their profil
 
 st.sidebar.header("Enter Customer Details")
 
-# Sidebar inputs
 tenure = st.sidebar.slider("Tenure (months)", 0, 72, 12)
 monthly_charges = st.sidebar.slider("Monthly Charges ($)", 10, 120, 65)
 total_charges = st.sidebar.number_input("Total Charges ($)", 0.0, 9000.0, 500.0)
@@ -33,10 +31,8 @@ payment_method = st.sidebar.selectbox("Payment Method", [
 online_security = st.sidebar.selectbox("Online Security", ["Yes", "No"])
 tech_support = st.sidebar.selectbox("Tech Support", ["Yes", "No"])
 
-# Build input row
 input_dict = {col: 0 for col in feature_columns}
 
-# Fill in values
 input_dict['tenure'] = tenure
 input_dict['MonthlyCharges'] = monthly_charges
 input_dict['TotalCharges'] = total_charges
@@ -70,47 +66,29 @@ for p in ['Electronic check', 'Mailed check',
     if col in input_dict:
         input_dict[col] = 1 if payment_method == p else 0
 
-# Predict
 input_df = pd.DataFrame([input_dict])
 input_scaled = scaler.transform(input_df)
 prob = model.predict_proba(input_scaled)[0][1]
 prediction = model.predict(input_scaled)[0]
 
-# Display result
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric("Churn Probability", f"{round(prob * 100, 1)}%")
 
 with col2:
-    risk = "🔴 High Risk" if prob > 0.7 else "🟡 Medium Risk" if prob > 0.4 else "🟢 Low Risk"
+    risk = "High Risk" if prob > 0.7 else "Medium Risk" if prob > 0.4 else "Low Risk"
     st.metric("Risk Level", risk)
 
 with col3:
     st.metric("Prediction", "Will Churn" if prediction == 1 else "Will Stay")
 
-# Risk bar
 st.markdown("### Churn Risk Meter")
 st.progress(float(prob))
 
 if prob > 0.7:
-    st.error("⚠️ High churn risk! Consider offering a discount or contract upgrade.")
+    st.error("High churn risk! Consider offering a discount or contract upgrade.")
 elif prob > 0.4:
-    st.warning("⚡ Medium risk. Monitor this customer closely.")
+    st.warning("Medium risk. Monitor this customer closely.")
 else:
-    st.success("✅ Low churn risk. Customer looks healthy!")
-```
-
----
-
-**Step 3 — Deploy on Streamlit Cloud (free):**
-```
-1. Go to github.com → create new repo → name it "churn-predictor"
-2. Upload these 4 files:
-   - app.py
-   - churn_model.pkl
-   - scaler.pkl
-   - feature_columns.json
-3. Go to share.streamlit.io → Sign in with GitHub
-4. Click "New app" → select your repo → main file = app.py
-5. Click Deploy → live in 2 minutes!
+    st.success("Low churn risk. Customer looks healthy!")
